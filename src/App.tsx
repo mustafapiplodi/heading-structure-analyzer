@@ -11,6 +11,11 @@ import SearchFilter from './components/SearchFilter';
 import ComparisonMode from './components/ComparisonMode';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import ThemeToggle from './components/ThemeToggle';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Keyboard, List, Table as TableIcon, GitCompare, AlertCircle, FileText } from 'lucide-react';
 import type { AnalysisResult } from './types';
 
 type ViewMode = 'tree' | 'table' | 'comparison';
@@ -132,31 +137,20 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-background transition-colors">
       <div className="container mx-auto px-4 py-8">
         {/* Header with Theme Toggle */}
         <div className="flex justify-end mb-4">
           <div className="flex items-center gap-3">
-            <button
+            <Button
               onClick={() => setShowShortcuts(true)}
-              className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 flex items-center gap-1"
+              variant="ghost"
+              size="sm"
               title="Keyboard shortcuts (Shift + ?)"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-                />
-              </svg>
+              <Keyboard className="mr-2 h-4 w-4" />
               Shortcuts
-            </button>
+            </Button>
             <ThemeToggle />
           </div>
         </div>
@@ -172,15 +166,11 @@ function App() {
         {/* Error Display */}
         {error && (
           <div className="max-w-4xl mx-auto mt-6">
-            <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 rounded-r-lg">
-              <div className="flex items-start">
-                <span className="text-red-500 text-xl mr-3">✗</span>
-                <div>
-                  <h3 className="font-semibold text-red-800 dark:text-red-300">Error</h3>
-                  <p className="text-red-700 dark:text-red-400">{error}</p>
-                </div>
-              </div>
-            </div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           </div>
         )}
 
@@ -189,81 +179,32 @@ function App() {
           <div className="max-w-6xl mx-auto mt-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
               {/* View Tabs */}
-              <div className="flex gap-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
-                <button
-                  onClick={() => setViewMode('tree')}
-                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                    viewMode === 'tree'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                  title="Tree view (Ctrl+T)"
-                >
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 6h16M4 12h16M4 18h7"
-                      />
-                    </svg>
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+                <TabsList>
+                  <TabsTrigger value="tree" title="Tree view (Ctrl+T)">
+                    <List className="mr-2 h-4 w-4" />
                     Tree
-                  </span>
-                </button>
-                <button
-                  onClick={() => setViewMode('table')}
-                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                    viewMode === 'table'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                  title="Table view (Ctrl+B)"
-                >
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      />
-                    </svg>
+                  </TabsTrigger>
+                  <TabsTrigger value="table" title="Table view (Ctrl+B)">
+                    <TableIcon className="mr-2 h-4 w-4" />
                     Table
-                  </span>
-                </button>
-                <button
-                  onClick={() => setViewMode('comparison')}
-                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                    viewMode === 'comparison'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                  title="Comparison mode (Ctrl+C)"
-                >
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                      />
-                    </svg>
+                  </TabsTrigger>
+                  <TabsTrigger value="comparison" title="Comparison mode (Ctrl+C)">
+                    <GitCompare className="mr-2 h-4 w-4" />
                     Compare
-                  </span>
-                </button>
-              </div>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
 
               {/* Reset Button */}
               {result && viewMode !== 'comparison' && (
-                <button
+                <Button
                   onClick={reset}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                  variant="outline"
                   title="Reset (Ctrl+R)"
                 >
                   Analyze Another
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -299,37 +240,39 @@ function App() {
 
             {/* Issues List */}
             {(result.validation.errors.length > 0 || result.validation.warnings.length > 0) && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-                <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
-                  Issues Detected
-                </h2>
+              <Card className="mb-6">
+                <CardContent className="pt-6">
+                  <h2 className="text-2xl font-bold mb-4">
+                    Issues Detected
+                  </h2>
 
-                {result.validation.errors.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-3">
-                      Critical Errors ({result.validation.errors.length})
-                    </h3>
-                    <div className="space-y-3">
-                      {result.validation.errors.map((error, idx) => (
-                        <IssueCard key={idx} issue={error} />
-                      ))}
+                  {result.validation.errors.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-destructive mb-3">
+                        Critical Errors ({result.validation.errors.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {result.validation.errors.map((error, idx) => (
+                          <IssueCard key={idx} issue={error} />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {result.validation.warnings.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-orange-600 dark:text-orange-400 mb-3">
-                      Warnings ({result.validation.warnings.length})
-                    </h3>
-                    <div className="space-y-3">
-                      {result.validation.warnings.map((warning, idx) => (
-                        <IssueCard key={idx} issue={warning} />
-                      ))}
+                  {result.validation.warnings.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-yellow-600 dark:text-yellow-500 mb-3">
+                        Warnings ({result.validation.warnings.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {result.validation.warnings.map((warning, idx) => (
+                          <IssueCard key={idx} issue={warning} />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </CardContent>
+              </Card>
             )}
 
             {/* Heading Visualization */}
@@ -357,32 +300,24 @@ function App() {
 
         {/* Empty State */}
         {!result && !error && !isAnalyzing && viewMode !== 'comparison' && (
-          <div className="max-w-4xl mx-auto mt-12 text-center text-gray-500 dark:text-gray-400">
-            <svg
-              className="mx-auto h-16 w-16 mb-4 text-gray-400 dark:text-gray-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Ready to analyze
-            </h3>
-            <p className="text-sm">Enter HTML, a URL, or upload a file to get started</p>
-            <p className="text-xs mt-2">Press Shift + ? to see keyboard shortcuts</p>
+          <div className="max-w-4xl mx-auto mt-12">
+            <Card>
+              <CardContent className="pt-12 pb-12 text-center">
+                <FileText className="mx-auto h-16 w-16 mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-medium mb-2">
+                  Ready to analyze
+                </h3>
+                <p className="text-sm text-muted-foreground">Enter HTML, a URL, or upload a file to get started</p>
+                <p className="text-xs text-muted-foreground mt-2">Press Shift + ? to see keyboard shortcuts</p>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <footer className="mt-12 py-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        <div className="container mx-auto px-4 text-center text-sm text-gray-600 dark:text-gray-400">
+      <footer className="mt-12 py-6 border-t border-border bg-card">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>Heading Structure Analyzer - SEO & Accessibility Compliance Tool</p>
           <p className="mt-1 text-xs">
             Analyze heading hierarchies for better content structure and WCAG compliance

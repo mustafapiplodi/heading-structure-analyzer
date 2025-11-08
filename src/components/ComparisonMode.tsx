@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import type { AnalysisResult } from '../types';
-import MetricsSummary from './MetricsSummary';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Upload, ArrowRightLeft } from 'lucide-react';
 import HeadingTree from './HeadingTree';
+import IssueCard from './IssueCard';
 
 interface ComparisonModeProps {
   results: [AnalysisResult | null, AnalysisResult | null];
@@ -17,160 +23,204 @@ export default function ComparisonMode({ results, onAnalyze }: ComparisonModePro
     }
   };
 
-  const ComparisonPanel = ({ index }: { index: 0 | 1 }) => {
+  const renderInputPanel = (index: 0 | 1, label: string) => {
     const result = results[index];
-    const title = index === 0 ? 'Before' : 'After';
 
     return (
-      <div className="flex-1">
-        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
-          <h3 className="text-lg font-bold mb-3">{title} Version</h3>
-
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>{label}</span>
+            {result && (
+              <Badge variant="secondary">
+                {result.metrics.totalHeadings} headings
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           {!result ? (
-            <div>
-              <textarea
+            <>
+              <Textarea
                 value={htmlInputs[index]}
                 onChange={(e) => {
-                  const newInputs: [string, string] = [...htmlInputs] as [string, string];
+                  const newInputs: [string, string] = [...htmlInputs];
                   newInputs[index] = e.target.value;
                   setHtmlInputs(newInputs);
                 }}
-                placeholder={`Paste ${title.toLowerCase()} HTML here...`}
-                rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Paste HTML content here..."
+                className="min-h-[200px] font-mono text-sm"
               />
-              <button
+              <Button
                 onClick={() => handleAnalyze(index)}
                 disabled={!htmlInputs[index].trim()}
-                className="mt-2 w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="w-full"
               >
-                Analyze {title}
-              </button>
-            </div>
+                <Upload className="mr-2 h-4 w-4" />
+                Analyze {label}
+              </Button>
+            </>
           ) : (
-            <div>
-              <button
+            <div className="space-y-4">
+              {/* Mini Metrics Summary */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-3 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Total</div>
+                  <div className="text-2xl font-bold">{result.metrics.totalHeadings}</div>
+                </div>
+                <div className="p-3 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Max Depth</div>
+                  <div className="text-2xl font-bold">{result.metrics.maxDepth}</div>
+                </div>
+                <div className="p-3 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Errors</div>
+                  <div className="text-2xl font-bold text-destructive">
+                    {result.validation.errors.length}
+                  </div>
+                </div>
+                <div className="p-3 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Warnings</div>
+                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-500">
+                    {result.validation.warnings.length}
+                  </div>
+                </div>
+              </div>
+
+              {/* Issues */}
+              {(result.validation.errors.length > 0 || result.validation.warnings.length > 0) && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold">Issues</h4>
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                    {result.validation.errors.map((error, idx) => (
+                      <IssueCard key={`error-${idx}`} issue={error} />
+                    ))}
+                    {result.validation.warnings.map((warning, idx) => (
+                      <IssueCard key={`warning-${idx}`} issue={warning} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Re-analyze button */}
+              <Button
                 onClick={() => {
-                  const newResults = [...results] as [
-                    AnalysisResult | null,
-                    AnalysisResult | null
-                  ];
+                  const newResults = [...results] as [AnalysisResult | null, AnalysisResult | null];
                   newResults[index] = null;
-                  const newInputs: [string, string] = [...htmlInputs] as [string, string];
-                  newInputs[index] = '';
-                  setHtmlInputs(newInputs);
+                  setHtmlInputs((prev) => {
+                    const newInputs: [string, string] = [...prev];
+                    newInputs[index] = '';
+                    return newInputs;
+                  });
                 }}
-                className="mb-3 text-sm text-blue-600 hover:text-blue-800"
+                variant="outline"
+                size="sm"
+                className="w-full"
               >
-                ← Change {title} HTML
-              </button>
-              <MetricsSummary result={result} />
+                Analyze Different Content
+              </Button>
             </div>
           )}
-        </div>
-
-        {result && (
-          <div className="space-y-4">
-            <HeadingTree hierarchy={result.hierarchy} />
-          </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     );
   };
 
-  // Comparison Summary
-  const ComparisonSummary = () => {
-    if (!results[0] || !results[1]) return null;
+  const renderComparison = () => {
+    const [result1, result2] = results;
 
-    const before = results[0].metrics;
-    const after = results[1].metrics;
+    if (!result1 || !result2) {
+      return null;
+    }
 
-    const changes = {
-      totalHeadings: after.totalHeadings - before.totalHeadings,
-      h1Count: after.h1Count - before.h1Count,
-      h2Count: after.h2Count - before.h2Count,
-      h3Count: after.h3Count - before.h3Count,
-      h4Count: after.h4Count - before.h4Count,
-      h5Count: after.h5Count - before.h5Count,
-      h6Count: after.h6Count - before.h6Count,
-      errors: results[1].validation.errors.length - results[0].validation.errors.length,
-      warnings:
-        results[1].validation.warnings.length - results[0].validation.warnings.length,
+    const differences = {
+      totalHeadings: result2.metrics.totalHeadings - result1.metrics.totalHeadings,
+      maxDepth: result2.metrics.maxDepth - result1.metrics.maxDepth,
+      errors: result2.validation.errors.length - result1.validation.errors.length,
+      warnings: result2.validation.warnings.length - result1.validation.warnings.length,
     };
 
-    const ChangeIndicator = ({ value }: { value: number }) => {
-      if (value === 0)
-        return <span className="text-gray-500 text-sm">No change</span>;
-      if (value > 0)
-        return (
-          <span className="text-green-600 text-sm font-medium">
-            +{value} ↑
-          </span>
-        );
-      return (
-        <span className="text-red-600 text-sm font-medium">
-          {value} ↓
-        </span>
-      );
+    const formatDiff = (value: number) => {
+      if (value === 0) return '—';
+      const sign = value > 0 ? '+' : '';
+      return `${sign}${value}`;
+    };
+
+    const getDiffColor = (value: number, inverse = false) => {
+      if (value === 0) return 'text-muted-foreground';
+      const isPositive = inverse ? value < 0 : value > 0;
+      return isPositive ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500';
     };
 
     return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-        <h3 className="text-xl font-bold text-blue-900 mb-4">📊 Comparison Summary</h3>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg p-3">
-            <div className="text-xs text-gray-600 mb-1">Total Headings</div>
-            <ChangeIndicator value={changes.totalHeadings} />
-          </div>
-
-          <div className="bg-white rounded-lg p-3">
-            <div className="text-xs text-gray-600 mb-1">Critical Errors</div>
-            <ChangeIndicator value={changes.errors} />
-          </div>
-
-          <div className="bg-white rounded-lg p-3">
-            <div className="text-xs text-gray-600 mb-1">Warnings</div>
-            <ChangeIndicator value={changes.warnings} />
-          </div>
-
-          {[1, 2, 3, 4, 5, 6].map((level) => (
-            <div key={level} className="bg-white rounded-lg p-3">
-              <div className="text-xs text-gray-600 mb-1">H{level} Count</div>
-              <ChangeIndicator
-                value={changes[`h${level}Count` as keyof typeof changes] as number}
-              />
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ArrowRightLeft className="h-5 w-5" />
+            Comparison Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 bg-muted rounded-lg text-center">
+              <div className="text-sm text-muted-foreground mb-1">Total Headings</div>
+              <div className={`text-xl font-bold ${getDiffColor(differences.totalHeadings)}`}>
+                {formatDiff(differences.totalHeadings)}
+              </div>
             </div>
-          ))}
-        </div>
-
-        {changes.errors < 0 && changes.warnings < 0 && (
-          <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
-            <p className="text-green-800 font-medium">
-              ✓ Great! You've improved the heading structure by reducing issues.
-            </p>
+            <div className="p-4 bg-muted rounded-lg text-center">
+              <div className="text-sm text-muted-foreground mb-1">Max Depth</div>
+              <div className={`text-xl font-bold ${getDiffColor(differences.maxDepth)}`}>
+                {formatDiff(differences.maxDepth)}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg text-center">
+              <div className="text-sm text-muted-foreground mb-1">Errors</div>
+              <div className={`text-xl font-bold ${getDiffColor(differences.errors, true)}`}>
+                {formatDiff(differences.errors)}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg text-center">
+              <div className="text-sm text-muted-foreground mb-1">Warnings</div>
+              <div className={`text-xl font-bold ${getDiffColor(differences.warnings, true)}`}>
+                {formatDiff(differences.warnings)}
+              </div>
+            </div>
           </div>
-        )}
 
-        {(changes.errors > 0 || changes.warnings > 0) && (
-          <div className="mt-4 p-3 bg-orange-100 border border-orange-300 rounded-lg">
-            <p className="text-orange-800 font-medium">
-              ⚠ Warning: The changes introduced new issues. Review the after version.
-            </p>
+          <div className="mt-6">
+            <Tabs defaultValue="before">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="before">Before Structure</TabsTrigger>
+                <TabsTrigger value="after">After Structure</TabsTrigger>
+              </TabsList>
+              <TabsContent value="before" className="mt-4">
+                <HeadingTree hierarchy={result1.hierarchy} />
+              </TabsContent>
+              <TabsContent value="after" className="mt-4">
+                <HeadingTree hierarchy={result2.hierarchy} />
+              </TabsContent>
+            </Tabs>
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     );
   };
 
   return (
-    <div>
-      <ComparisonSummary />
-
-      <div className="flex flex-col lg:flex-row gap-6">
-        <ComparisonPanel index={0} />
-        <ComparisonPanel index={1} />
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold mb-2">Comparison Mode</h2>
+        <p className="text-muted-foreground">
+          Compare two HTML documents side-by-side to see how heading structure changes
+        </p>
       </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {renderInputPanel(0, 'Before')}
+        {renderInputPanel(1, 'After')}
+      </div>
+
+      {renderComparison()}
     </div>
   );
 }

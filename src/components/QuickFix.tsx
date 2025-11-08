@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import type { Issue } from '../types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 
 interface QuickFixProps {
   issue: Issue;
@@ -9,6 +13,8 @@ interface QuickFixProps {
 
 export default function QuickFix({ issue, html, text }: QuickFixProps) {
   const [showFix, setShowFix] = useState(false);
+  const [copiedBefore, setCopiedBefore] = useState(false);
+  const [copiedAfter, setCopiedAfter] = useState(false);
 
   const generateFix = (): { before: string; after: string; explanation: string } | null => {
     switch (issue.type) {
@@ -100,72 +106,95 @@ export default function QuickFix({ issue, html, text }: QuickFixProps) {
     return null;
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = async (text: string, type: 'before' | 'after') => {
+    await navigator.clipboard.writeText(text);
+    if (type === 'before') {
+      setCopiedBefore(true);
+      setTimeout(() => setCopiedBefore(false), 2000);
+    } else {
+      setCopiedAfter(true);
+      setTimeout(() => setCopiedAfter(false), 2000);
+    }
   };
 
   return (
     <div className="mt-3">
-      <button
+      <Button
         onClick={() => setShowFix(!showFix)}
-        className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+        variant="ghost"
+        size="sm"
+        className="h-8"
       >
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
+        {showFix ? <ChevronUp className="mr-1 h-4 w-4" /> : <ChevronDown className="mr-1 h-4 w-4" />}
         {showFix ? 'Hide Quick Fix' : 'Show Quick Fix'}
-      </button>
+      </Button>
 
       {showFix && (
-        <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-900 mb-3">{fix.explanation}</p>
+        <Card className="mt-3 border-primary/20">
+          <CardContent className="pt-4 space-y-4">
+            <p className="text-sm text-muted-foreground">{fix.explanation}</p>
 
-          <div className="space-y-3">
             {/* Before */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold text-red-700">Before:</span>
-                <button
-                  onClick={() => copyToClipboard(fix.before)}
-                  className="text-xs text-gray-600 hover:text-gray-800"
-                  title="Copy to clipboard"
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Badge variant="destructive" className="text-xs">
+                  Before
+                </Badge>
+                <Button
+                  onClick={() => copyToClipboard(fix.before, 'before')}
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
                 >
-                  📋 Copy
-                </button>
+                  {copiedBefore ? (
+                    <>
+                      <Check className="mr-1 h-3 w-3" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="mr-1 h-3 w-3" />
+                      Copy
+                    </>
+                  )}
+                </Button>
               </div>
-              <pre className="p-2 bg-red-50 border border-red-200 rounded text-xs overflow-x-auto">
+              <pre className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-xs overflow-x-auto">
                 <code>{fix.before}</code>
               </pre>
             </div>
 
             {/* After */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold text-green-700">After:</span>
-                <button
-                  onClick={() => copyToClipboard(fix.after)}
-                  className="text-xs text-gray-600 hover:text-gray-800"
-                  title="Copy to clipboard"
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Badge className="bg-green-600 text-xs">
+                  After
+                </Badge>
+                <Button
+                  onClick={() => copyToClipboard(fix.after, 'after')}
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
                 >
-                  📋 Copy
-                </button>
+                  {copiedAfter ? (
+                    <>
+                      <Check className="mr-1 h-3 w-3" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="mr-1 h-3 w-3" />
+                      Copy
+                    </>
+                  )}
+                </Button>
               </div>
-              <pre className="p-2 bg-green-50 border border-green-200 rounded text-xs overflow-x-auto">
+              <pre className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md text-xs overflow-x-auto">
                 <code>{fix.after}</code>
               </pre>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

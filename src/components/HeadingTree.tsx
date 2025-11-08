@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import type { HeadingNode } from '../types';
 import IssueCard from './IssueCard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 interface HeadingTreeProps {
   hierarchy: HeadingNode;
@@ -12,9 +16,8 @@ interface TreeNodeProps {
 }
 
 function TreeNode({ node, depth = 0 }: TreeNodeProps) {
-  const [isExpanded, setIsExpanded] = useState(depth < 2); // Auto-expand first 2 levels
+  const [isExpanded, setIsExpanded] = useState(depth < 2);
 
-  // Skip rendering root node (level 0 is used for root)
   if ((node.level as number) === 0) {
     return (
       <div>
@@ -30,76 +33,66 @@ function TreeNode({ node, depth = 0 }: TreeNodeProps) {
 
   const getLevelColor = (level: number) => {
     const colors = [
-      '', // 0 - not used
-      'bg-red-100 border-red-300 text-red-900', // H1
-      'bg-blue-100 border-blue-300 text-blue-900', // H2
-      'bg-green-100 border-green-300 text-green-900', // H3
-      'bg-yellow-100 border-yellow-300 text-yellow-900', // H4
-      'bg-purple-100 border-purple-300 text-purple-900', // H5
-      'bg-teal-100 border-teal-300 text-teal-900', // H6
+      '',
+      'bg-red-100 dark:bg-red-950 border-red-300 dark:border-red-800 text-red-900 dark:text-red-300',
+      'bg-blue-100 dark:bg-blue-950 border-blue-300 dark:border-blue-800 text-blue-900 dark:text-blue-300',
+      'bg-green-100 dark:bg-green-950 border-green-300 dark:border-green-800 text-green-900 dark:text-green-300',
+      'bg-yellow-100 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-800 text-yellow-900 dark:text-yellow-300',
+      'bg-purple-100 dark:bg-purple-950 border-purple-300 dark:border-purple-800 text-purple-900 dark:text-purple-300',
+      'bg-teal-100 dark:bg-teal-950 border-teal-300 dark:border-teal-800 text-teal-900 dark:text-teal-300',
     ];
     return colors[level] || 'bg-gray-100 border-gray-300 text-gray-900';
   };
 
   return (
     <div className="ml-6 my-2">
-      <div
-        className={`border-l-4 rounded-r-lg p-3 ${
-          hasIssues ? 'border-red-500 bg-red-50' : 'border-gray-200'
-        }`}
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex items-start flex-1">
+      <Card className={hasIssues ? 'border-destructive' : ''}>
+        <CardContent className="pt-4">
+          <div className="flex items-start gap-2">
             {hasChildren && (
-              <button
+              <Button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="mr-2 text-gray-500 hover:text-gray-700 focus:outline-none mt-1"
-                aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
               >
-                {isExpanded ? '▼' : '▶'}
-              </button>
+                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </Button>
             )}
             <div className="flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span
-                  className={`inline-block px-2 py-1 rounded text-xs font-bold border ${getLevelColor(
-                    node.level
-                  )}`}
-                >
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <Badge className={getLevelColor(node.level)}>
                   H{node.level}
-                </span>
-                <span className="font-medium text-gray-900">{node.text}</span>
+                </Badge>
+                <span className="font-medium">{node.text}</span>
                 {hasIssues && (
-                  <span className="text-red-600 text-sm font-semibold">
+                  <Badge variant="destructive">
                     {node.issues.length} issue{node.issues.length !== 1 ? 's' : ''}
-                  </span>
+                  </Badge>
                 )}
               </div>
 
-              {/* Show issues for this heading */}
               {hasIssues && (
                 <div className="mt-3 space-y-2">
                   {node.issues.map((issue, idx) => (
-                    <IssueCard key={idx} issue={issue} />
+                    <IssueCard key={idx} issue={issue} html={node.html} text={node.text} />
                   ))}
                 </div>
               )}
 
-              {/* Show HTML preview in collapsed form */}
               <details className="mt-2">
-                <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
+                <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
                   View HTML
                 </summary>
-                <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-x-auto">
+                <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto">
                   <code>{node.html}</code>
                 </pre>
               </details>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Render children */}
       {hasChildren && isExpanded && (
         <div className="mt-1">
           {node.items.map((child, index) => (
@@ -113,11 +106,13 @@ function TreeNode({ node, depth = 0 }: TreeNodeProps) {
 
 export default function HeadingTree({ hierarchy }: HeadingTreeProps) {
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-4">Heading Hierarchy</h2>
-      <div className="space-y-2">
+    <Card>
+      <CardHeader>
+        <CardTitle>Heading Hierarchy</CardTitle>
+      </CardHeader>
+      <CardContent>
         <TreeNode node={hierarchy} />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

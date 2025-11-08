@@ -1,101 +1,120 @@
 import { useState, useMemo } from 'react';
-import type { AnalysisResult, HeadingNode } from '../types';
+import type { AnalysisResult, Heading, Issue } from '../types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import IssueCard from './IssueCard';
-import { getSeverityIcon } from '../lib/validateStructure';
 
 interface HeadingTableProps {
   result: AnalysisResult;
-  searchQuery?: string;
-  levelFilter?: number[];
-  severityFilter?: string[];
+  searchQuery: string;
+  levelFilter: number[];
+  severityFilter: string[];
 }
 
 type SortField = 'position' | 'level' | 'text' | 'issues';
 type SortDirection = 'asc' | 'desc';
 
-interface FlatHeading {
-  position: number;
-  level: number;
-  text: string;
-  html: string;
-  issues: HeadingNode['issues'];
-  issueCount: number;
-  maxSeverity: 'none' | 'info' | 'warning' | 'critical';
+interface HeadingWithIssues extends Heading {
+  issues: Issue[];
 }
 
 export default function HeadingTable({
   result,
-  searchQuery = '',
-  levelFilter = [],
-  severityFilter = [],
+  searchQuery,
+  levelFilter,
+  severityFilter,
 }: HeadingTableProps) {
   const [sortField, setSortField] = useState<SortField>('position');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
-  // Flatten hierarchy to table rows
-  const flattenedHeadings = useMemo(() => {
-    const flattened: FlatHeading[] = [];
-    let position = 0;
+  // Get issues for each heading from the hierarchy
+  const getIssuesForHeading = (heading: Heading): Issue[] => {
+    const issues: Issue[] = [];
 
-    function traverse(node: HeadingNode) {
-      if (node.level > 0) {
-        const maxSeverity =
-          node.issues.length === 0
-            ? 'none'
-            : node.issues.some((i) => i.severity === 'critical')
-            ? 'critical'
-            : node.issues.some((i) => i.severity === 'warning')
-            ? 'warning'
-            : 'info';
-
-        flattened.push({
-          position: position++,
-          level: node.level,
-          text: node.text,
-          html: node.html,
-          issues: node.issues,
-          issueCount: node.issues.length,
-          maxSeverity,
-        });
+    const findNode = (node: any, pos: number): Issue[] => {
+      if (node.position === pos) {
+        return node.issues || [];
       }
-      node.items.forEach(traverse);
-    }
+      for (const child of node.items || []) {
+        const found = findNode(child, pos);
+        if (found.length > 0) return found;
+      }
+      return [];
+    };
 
-    traverse(result.hierarchy);
-    return flattened;
-  }, [result.hierarchy]);
+    // Also check global validation errors/warnings for this heading
+    const allIssues = [
+      ...result.validation.errors,
+      ...result.validation.warnings,
+    ];
 
-  // Filter and sort headings
-  const filteredAndSortedHeadings = useMemo(() => {
-    let filtered = flattenedHeadings;
+    // Match issues to heading by text or position
+    allIssues.forEach((issue) => {
+      if (
+        issue.message.includes(heading.text) ||
+        issue.message.includes(`H${heading.level}`)
+      ) {
+        issues.push(issue);
+      }
+    });
 
-    // Apply search filter
+    return issues;
+  };
+
+  // Enrich headings with their issues
+  const headingsWithIssues: HeadingWithIssues[] = useMemo(() => {
+    return result.headings.map((heading) => ({
+      ...heading,
+      issues: getIssuesForHeading(heading),
+    }));
+  }, [result]);
+
+  // Filter headings
+  const filteredHeadings = useMemo(() => {
+    let filtered = headingsWithIssues;
+
+    // Search filter
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((h) => h.text.toLowerCase().includes(query));
+      filtered = filtered.filter((h) =>
+        h.text.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
 
-    // Apply level filter
+    // Level filter
     if (levelFilter.length > 0) {
       filtered = filtered.filter((h) => levelFilter.includes(h.level));
     }
 
-    // Apply severity filter
+    // Severity filter
     if (severityFilter.length > 0) {
       filtered = filtered.filter((h) => {
-        if (severityFilter.includes('none') && h.maxSeverity === 'none') return true;
-        if (severityFilter.includes('critical') && h.maxSeverity === 'critical')
+        if (severityFilter.includes('none') && h.issues.length === 0) {
           return true;
-        if (severityFilter.includes('warning') && h.maxSeverity === 'warning')
-          return true;
-        if (severityFilter.includes('info') && h.maxSeverity === 'info') return true;
-        return false;
+        }
+        return h.issues.some((issue) =>
+          severityFilter.includes(issue.severity)
+        );
       });
     }
 
-    // Sort
-    const sorted = [...filtered].sort((a, b) => {
+    return filtered;
+  }, [headingsWithIssues, searchQuery, levelFilter, severityFilter]);
+
+  // Sort headings
+  const sortedHeadings = useMemo(() => {
+    const sorted = [...filteredHeadings];
+
+    sorted.sort((a, b) => {
       let comparison = 0;
 
       switch (sortField) {
@@ -109,7 +128,7 @@ export default function HeadingTable({
           comparison = a.text.localeCompare(b.text);
           break;
         case 'issues':
-          comparison = a.issueCount - b.issueCount;
+          comparison = a.issues.length - b.issues.length;
           break;
       }
 
@@ -117,7 +136,7 @@ export default function HeadingTable({
     });
 
     return sorted;
-  }, [flattenedHeadings, searchQuery, levelFilter, severityFilter, sortField, sortDirection]);
+  }, [filteredHeadings, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -128,189 +147,152 @@ export default function HeadingTable({
     }
   };
 
-  const toggleRowExpansion = (position: number) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(position)) {
-      newExpanded.delete(position);
-    } else {
-      newExpanded.add(position);
-    }
-    setExpandedRows(newExpanded);
-  };
-
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) {
-      return <span className="text-gray-400">⇅</span>;
+      return <ArrowUpDown className="ml-1 h-4 w-4" />;
     }
-    return sortDirection === 'asc' ? <span>↑</span> : <span>↓</span>;
+    return sortDirection === 'asc' ? (
+      <ArrowUp className="ml-1 h-4 w-4" />
+    ) : (
+      <ArrowDown className="ml-1 h-4 w-4" />
+    );
   };
 
-  const getLevelBadgeColor = (level: number) => {
+  const getLevelColor = (level: number) => {
     const colors = [
       '',
-      'bg-red-100 text-red-800 border-red-300',
-      'bg-blue-100 text-blue-800 border-blue-300',
-      'bg-green-100 text-green-800 border-green-300',
-      'bg-yellow-100 text-yellow-800 border-yellow-300',
-      'bg-purple-100 text-purple-800 border-purple-300',
-      'bg-teal-100 text-teal-800 border-teal-300',
+      'bg-red-100 dark:bg-red-950 border-red-300 dark:border-red-800 text-red-900 dark:text-red-300',
+      'bg-blue-100 dark:bg-blue-950 border-blue-300 dark:border-blue-800 text-blue-900 dark:text-blue-300',
+      'bg-green-100 dark:bg-green-950 border-green-300 dark:border-green-800 text-green-900 dark:text-green-300',
+      'bg-yellow-100 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-800 text-yellow-900 dark:text-yellow-300',
+      'bg-purple-100 dark:bg-purple-950 border-purple-300 dark:border-purple-800 text-purple-900 dark:text-purple-300',
+      'bg-teal-100 dark:bg-teal-950 border-teal-300 dark:border-teal-800 text-teal-900 dark:text-teal-300',
     ];
-    return colors[level] || 'bg-gray-100 text-gray-800 border-gray-300';
-  };
-
-  const getSeverityBadgeColor = (severity: FlatHeading['maxSeverity']) => {
-    switch (severity) {
-      case 'critical':
-        return 'bg-red-100 text-red-800 border-red-300';
-      case 'warning':
-        return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'info':
-        return 'bg-blue-100 text-blue-800 border-blue-300';
-      default:
-        return 'bg-green-100 text-green-800 border-green-300';
-    }
+    return colors[level] || 'bg-gray-100 border-gray-300 text-gray-900';
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="w-12 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                #
-              </th>
-              <th
-                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('level')}
-              >
-                <div className="flex items-center gap-2">
-                  Level <SortIcon field="level" />
-                </div>
-              </th>
-              <th
-                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('text')}
-              >
-                <div className="flex items-center gap-2">
-                  Text <SortIcon field="text" />
-                </div>
-              </th>
-              <th
-                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('issues')}
-              >
-                <div className="flex items-center gap-2">
-                  Issues <SortIcon field="issues" />
-                </div>
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredAndSortedHeadings.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
-                  No headings match the current filters
-                </td>
-              </tr>
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          Headings Table
+          {filteredHeadings.length !== result.headings.length && (
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              ({filteredHeadings.length} of {result.headings.length})
+            </span>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[80px]">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleSort('position')}
+                  className="h-8 px-2"
+                >
+                  #
+                  <SortIcon field="position" />
+                </Button>
+              </TableHead>
+              <TableHead className="w-[100px]">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleSort('level')}
+                  className="h-8 px-2"
+                >
+                  Level
+                  <SortIcon field="level" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleSort('text')}
+                  className="h-8 px-2"
+                >
+                  Text
+                  <SortIcon field="text" />
+                </Button>
+              </TableHead>
+              <TableHead className="w-[120px]">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleSort('issues')}
+                  className="h-8 px-2"
+                >
+                  Issues
+                  <SortIcon field="issues" />
+                </Button>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedHeadings.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                  No headings found matching the current filters.
+                </TableCell>
+              </TableRow>
             ) : (
-              filteredAndSortedHeadings.map((heading) => (
-                <>
-                  <tr
-                    key={heading.position}
-                    className={`hover:bg-gray-50 ${
-                      heading.issueCount > 0 ? 'bg-red-50/30' : ''
-                    }`}
-                  >
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {heading.position + 1}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-block px-2 py-1 text-xs font-semibold border rounded ${getLevelBadgeColor(
-                          heading.level
-                        )}`}
-                      >
-                        H{heading.level}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-sm font-medium text-gray-900 break-words max-w-md">
-                        {heading.text}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      {heading.issueCount > 0 ? (
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold border rounded ${getSeverityBadgeColor(
-                            heading.maxSeverity
-                          )}`}
-                        >
-                          {getSeverityIcon(
-                            heading.maxSeverity === 'none' ? 'info' : heading.maxSeverity
-                          )}{' '}
-                          {heading.issueCount} issue{heading.issueCount !== 1 ? 's' : ''}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 border border-green-300 rounded">
-                          ✓ No issues
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => toggleRowExpansion(heading.position)}
-                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                      >
-                        {expandedRows.has(heading.position) ? 'Hide Details' : 'Show Details'}
-                      </button>
-                    </td>
-                  </tr>
-                  {expandedRows.has(heading.position) && (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-4 bg-gray-50">
-                        <div className="space-y-3">
-                          {/* HTML Code */}
-                          <div>
-                            <h4 className="text-xs font-semibold text-gray-700 mb-2">
-                              HTML Code:
-                            </h4>
-                            <pre className="p-3 bg-white rounded border border-gray-200 text-xs overflow-x-auto">
-                              <code>{heading.html}</code>
-                            </pre>
-                          </div>
-
-                          {/* Issues */}
-                          {heading.issues.length > 0 && (
-                            <div>
-                              <h4 className="text-xs font-semibold text-gray-700 mb-2">
-                                Issues:
-                              </h4>
-                              <div className="space-y-2">
-                                {heading.issues.map((issue, idx) => (
-                                  <IssueCard key={idx} issue={issue} />
-                                ))}
-                              </div>
-                            </div>
-                          )}
+              sortedHeadings.map((heading, index) => (
+                <TableRow key={`${heading.position}-${index}`}>
+                  <TableCell className="font-mono text-sm text-muted-foreground">
+                    {heading.position}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getLevelColor(heading.level)}>
+                      H{heading.level}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{heading.text}</div>
+                      {heading.issues.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          {heading.issues.map((issue, idx) => (
+                            <IssueCard
+                              key={idx}
+                              issue={issue}
+                              html={heading.html}
+                              text={heading.text}
+                            />
+                          ))}
                         </div>
-                      </td>
-                    </tr>
-                  )}
-                </>
+                      )}
+                      <details className="mt-2">
+                        <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                          View HTML
+                        </summary>
+                        <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto">
+                          <code>{heading.html}</code>
+                        </pre>
+                      </details>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {heading.issues.length > 0 ? (
+                      <Badge variant="destructive">
+                        {heading.issues.length}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="bg-green-100 dark:bg-green-950 text-green-900 dark:text-green-300">
+                        None
+                      </Badge>
+                    )}
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Table Footer */}
-      <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-sm text-gray-600">
-        Showing {filteredAndSortedHeadings.length} of {flattenedHeadings.length} headings
-      </div>
-    </div>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }
