@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import type { BatchJob, BatchAnalysisState, BatchStats, AnalysisResult } from '../types';
-import { extractHeadings } from '../lib/extractHeadings';
+import { extractHeadingsFromUrl } from '../lib/extractHeadings';
 import { buildHeadingHierarchy, countHeadingsByLevel, calculateMaxDepth } from '../lib/buildHierarchy';
 import { validateHeadingStructure } from '../lib/validateStructure';
 
@@ -25,19 +25,18 @@ export function useBatchAnalysis(options: UseBatchAnalysisOptions = {}) {
   const isPausedRef = useRef(false);
 
   /**
-   * Analyze a single URL
+   * Analyze a single URL using CORS proxy
    */
-  const analyzeUrl = async (url: string, signal?: AbortSignal): Promise<AnalysisResult> => {
-    const response = await fetch(url, { signal });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  const analyzeUrl = async (url: string): Promise<AnalysisResult> => {
+    // Validate and normalize URL
+    let normalizedUrl = url.trim();
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      normalizedUrl = 'https://' + normalizedUrl;
     }
 
-    const html = await response.text();
+    // Use extractHeadingsFromUrl which has CORS proxy fallback logic
+    const headings = await extractHeadingsFromUrl(normalizedUrl);
 
-    // Extract and analyze headings
-    const headings = extractHeadings('body', html);
     const hierarchy = buildHeadingHierarchy(headings);
     const validation = validateHeadingStructure(headings);
     const counts = countHeadingsByLevel(headings);
@@ -65,7 +64,7 @@ export function useBatchAnalysis(options: UseBatchAnalysisOptions = {}) {
    */
   const processJob = async (job: BatchJob, signal?: AbortSignal): Promise<BatchJob> => {
     try {
-      const result = await analyzeUrl(job.url, signal);
+      const result = await analyzeUrl(job.url);
       return {
         ...job,
         status: 'completed',
