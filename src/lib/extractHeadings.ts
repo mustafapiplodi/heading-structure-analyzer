@@ -158,11 +158,33 @@ export function extractHeadings(
 
 /**
  * List of CORS proxy services to try in order
+ * Note: Some proxies may have rate limits or may be down periodically
  */
 const CORS_PROXIES = [
-  'https://corsproxy.io/?',
-  'https://api.allorigins.win/raw?url=',
-  'https://cors-anywhere.herokuapp.com/',
+  // AllOrigins - Most reliable, wraps response in JSON
+  {
+    url: 'https://api.allorigins.win/get?url=',
+    type: 'json' as const,
+    extract: (data: any) => data.contents
+  },
+  // Corsproxy.io - Direct proxy
+  {
+    url: 'https://corsproxy.io/?',
+    type: 'direct' as const,
+    extract: (data: any) => data
+  },
+  // ThingProxy - Another reliable option
+  {
+    url: 'https://thingproxy.freeboard.io/fetch/',
+    type: 'direct' as const,
+    extract: (data: any) => data
+  },
+  // API CORS Proxy
+  {
+    url: 'https://api.codetabs.com/v1/proxy?quest=',
+    type: 'direct' as const,
+    extract: (data: any) => data
+  },
 ];
 
 /**
@@ -184,44 +206,61 @@ export async function extractHeadingsFromUrl(url: string): Promise<Heading[]> {
   // Try each proxy in order
   for (let i = 0; i < CORS_PROXIES.length; i++) {
     const proxy = CORS_PROXIES[i];
-    const proxyUrl = `${proxy}${encodeURIComponent(validatedUrl.toString())}`;
+    const proxyUrl = `${proxy.url}${encodeURIComponent(validatedUrl.toString())}`;
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
 
       const response = await fetch(proxyUrl, {
         headers: {
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
         signal: controller.signal,
+        mode: 'cors',
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        errors.push(`Proxy ${i + 1} failed: ${response.statusText}`);
+        errors.push(`Proxy ${i + 1} (${proxy.url.split('/')[2]}) failed: HTTP ${response.status}`);
         continue;
       }
 
-      const html = await response.text();
+      let html: string;
+
+      // Handle different proxy response types
+      if (proxy.type === 'json') {
+        const jsonData = await response.json();
+        html = proxy.extract(jsonData);
+      } else {
+        html = await response.text();
+      }
 
       // Validate that we got HTML content
       if (!html || html.trim().length === 0) {
-        errors.push(`Proxy ${i + 1} returned empty content`);
+        errors.push(`Proxy ${i + 1} (${proxy.url.split('/')[2]}) returned empty content`);
         continue;
       }
 
+      // Check if it looks like HTML
+      if (!html.includes('<') && !html.includes('>')) {
+        errors.push(`Proxy ${i + 1} (${proxy.url.split('/')[2]}) didn't return valid HTML`);
+        continue;
+      }
+
+      // Success! Extract and return headings
       return extractHeadings('body', html);
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          errors.push(`Proxy ${i + 1} timed out after 15 seconds`);
+          errors.push(`Proxy ${i + 1} (${proxy.url.split('/')[2]}) timed out after 20 seconds`);
         } else {
-          errors.push(`Proxy ${i + 1} error: ${error.message}`);
+          errors.push(`Proxy ${i + 1} (${proxy.url.split('/')[2]}) error: ${error.message}`);
         }
       } else {
-        errors.push(`Proxy ${i + 1} failed with unknown error`);
+        errors.push(`Proxy ${i + 1} (${proxy.url.split('/')[2]}) failed with unknown error`);
       }
     }
   }
