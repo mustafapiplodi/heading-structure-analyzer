@@ -40,7 +40,7 @@ export default function ExportButtons({ result }: ExportButtonsProps) {
   };
 
   return (
-    <Card className="mb-6">
+    <Card className="mb-6 animate-fade-in">
       <CardHeader>
         <CardTitle>Export Results</CardTitle>
         <CardDescription>
@@ -53,27 +53,30 @@ export default function ExportButtons({ result }: ExportButtonsProps) {
           <Button
             onClick={() => handleExport('pdf')}
             variant="outline"
-            className="flex-1 min-w-[140px]"
+            className="flex-1 min-w-[140px] transition-all duration-300 hover:scale-105 hover:shadow-md animate-fade-in-scale"
+            style={{ animationDelay: '0.1s' }}
           >
-            <FileText className="mr-2 h-4 w-4" />
+            <FileText className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
             Export PDF
           </Button>
 
           <Button
             onClick={() => handleExport('csv')}
             variant="outline"
-            className="flex-1 min-w-[140px]"
+            className="flex-1 min-w-[140px] transition-all duration-300 hover:scale-105 hover:shadow-md animate-fade-in-scale"
+            style={{ animationDelay: '0.2s' }}
           >
-            <Table2 className="mr-2 h-4 w-4" />
+            <Table2 className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
             Export CSV
           </Button>
 
           <Button
             onClick={() => handleExport('json')}
             variant="outline"
-            className="flex-1 min-w-[140px]"
+            className="flex-1 min-w-[140px] transition-all duration-300 hover:scale-105 hover:shadow-md animate-fade-in-scale"
+            style={{ animationDelay: '0.3s' }}
           >
-            <FileCode className="mr-2 h-4 w-4" />
+            <FileCode className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
             Export JSON
           </Button>
         </div>

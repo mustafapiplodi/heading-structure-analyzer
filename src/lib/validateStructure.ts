@@ -1,4 +1,5 @@
 import type { Heading, ValidationResult, Issue } from '../types';
+import { performAdvancedValidation } from './advancedValidation';
 
 /**
  * Validate heading structure and detect common issues
@@ -10,6 +11,7 @@ export function validateHeadingStructure(
 ): ValidationResult {
   const errors: Issue[] = [];
   const warnings: Issue[] = [];
+  const info: Issue[] = [];
 
   // Check if there are any headings
   if (headings.length === 0) {
@@ -188,7 +190,19 @@ export function validateHeadingStructure(
     });
   }
 
-  return { errors, warnings };
+  // Perform advanced SEO and readability validation
+  const advancedIssues = performAdvancedValidation(headings);
+  advancedIssues.forEach(issue => {
+    if (issue.severity === 'critical') {
+      errors.push(issue);
+    } else if (issue.severity === 'warning') {
+      warnings.push(issue);
+    } else {
+      info.push(issue);
+    }
+  });
+
+  return { errors, warnings, info };
 }
 
 /**

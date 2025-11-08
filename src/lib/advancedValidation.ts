@@ -200,7 +200,7 @@ export function performAdvancedValidation(headings: Heading[]): Issue[] {
   });
 
   // Analyze each heading
-  headings.forEach((heading, index) => {
+  headings.forEach((heading) => {
     const text = heading.text.trim();
 
     // Readability analysis
@@ -257,7 +257,7 @@ export function performAdvancedValidation(headings: Heading[]): Issue[] {
     }
 
     // Sentiment analysis
-    const { sentiment, score } = analyzeSentiment(text);
+    const { sentiment } = analyzeSentiment(text);
     if (sentiment === 'negative' && heading.level === 1) {
       issues.push({
         type: 'negative_sentiment_h1',

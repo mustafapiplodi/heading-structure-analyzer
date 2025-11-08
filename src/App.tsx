@@ -4,9 +4,10 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useBatchAnalysis } from './hooks/useBatchAnalysis';
 import UrlInput from './components/UrlInput';
 import MetricsSummary from './components/MetricsSummary';
+import MetricsCharts from './components/MetricsCharts';
 import HeadingTree from './components/HeadingTree';
 import HeadingTable from './components/HeadingTable';
-import IssueCard from './components/IssueCard';
+import IssueManager from './components/IssueManager';
 import ExportButtons from './components/ExportButtons';
 import SearchFilter from './components/SearchFilter';
 import ComparisonMode from './components/ComparisonMode';
@@ -15,6 +16,7 @@ import BatchProgress from './components/BatchProgress';
 import BatchResults from './components/BatchResults';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import ThemeToggle from './components/ThemeToggle';
+import AnalysisSkeleton from './components/AnalysisSkeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -286,6 +288,9 @@ function App() {
             {/* Metrics Summary */}
             <MetricsSummary result={result} />
 
+            {/* Visual Charts */}
+            <MetricsCharts result={result} />
+
             {/* Export Buttons */}
             <ExportButtons result={result} />
 
@@ -301,42 +306,12 @@ function App() {
               />
             )}
 
-            {/* Issues List */}
-            {(result.validation.errors.length > 0 || result.validation.warnings.length > 0) && (
-              <Card className="mb-6">
-                <CardContent className="pt-6">
-                  <h2 className="text-2xl font-bold mb-4">
-                    Issues Detected
-                  </h2>
-
-                  {result.validation.errors.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-destructive mb-3">
-                        Critical Errors ({result.validation.errors.length})
-                      </h3>
-                      <div className="space-y-3">
-                        {result.validation.errors.map((error, idx) => (
-                          <IssueCard key={idx} issue={error} />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {result.validation.warnings.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-yellow-600 dark:text-yellow-500 mb-3">
-                        Warnings ({result.validation.warnings.length})
-                      </h3>
-                      <div className="space-y-3">
-                        {result.validation.warnings.map((warning, idx) => (
-                          <IssueCard key={idx} issue={warning} />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+            {/* Issues Management */}
+            <IssueManager
+              errors={result.validation.errors}
+              warnings={result.validation.warnings}
+              info={result.validation.info || []}
+            />
 
             {/* Heading Visualization */}
             {viewMode === 'tree' ? (
@@ -359,6 +334,11 @@ function App() {
               </p>
             </div>
           </div>
+        )}
+
+        {/* Loading Skeleton */}
+        {isAnalyzing && !result && (
+          <AnalysisSkeleton />
         )}
 
         {/* Empty State */}

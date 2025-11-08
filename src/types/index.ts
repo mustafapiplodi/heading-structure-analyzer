@@ -30,6 +30,7 @@ export interface HeadingNode {
 export interface ValidationResult {
   errors: Issue[];
   warnings: Issue[];
+  info?: Issue[];
 }
 
 export interface AnalysisResult {
