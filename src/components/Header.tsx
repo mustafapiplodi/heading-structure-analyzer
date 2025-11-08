@@ -1,12 +1,6 @@
-import { Button } from '@/components/ui/button';
-import { Keyboard } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
-interface HeaderProps {
-  onShowShortcuts: () => void;
-}
-
-export default function Header({ onShowShortcuts }: HeaderProps) {
+export default function Header() {
   return (
     <header className="border-b border-border bg-card sticky top-0 z-40 backdrop-blur-sm bg-card/95">
       <div className="container mx-auto px-4 py-4">
@@ -28,15 +22,6 @@ export default function Header({ onShowShortcuts }: HeaderProps) {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <Button
-              onClick={onShowShortcuts}
-              variant="ghost"
-              size="sm"
-              title="Keyboard shortcuts (Shift + ?)"
-            >
-              <Keyboard className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Shortcuts</span>
-            </Button>
             <ThemeToggle />
           </div>
         </div>

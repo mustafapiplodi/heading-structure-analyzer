@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useHeadingAnalysis } from './hooks/useHeadingAnalysis';
-import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useBatchAnalysis } from './hooks/useBatchAnalysis';
 import Header from './components/Header';
 import Breadcrumbs from './components/Breadcrumbs';
@@ -16,7 +15,6 @@ import ComparisonMode from './components/ComparisonMode';
 import BatchInput from './components/BatchInput';
 import BatchProgress from './components/BatchProgress';
 import BatchResults from './components/BatchResults';
-import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import AnalysisSkeleton from './components/AnalysisSkeleton';
 import AboutSection from './components/AboutSection';
 import FAQSection from './components/FAQSection';
@@ -61,69 +59,11 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState<number[]>([]);
   const [severityFilter, setSeverityFilter] = useState<string[]>([]);
-  const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Comparison mode states
   const [comparisonResults, setComparisonResults] = useState<
     [AnalysisResult | null, AnalysisResult | null]
   >([null, null]);
-
-  // Keyboard shortcuts
-  const shortcuts = [
-    {
-      key: 't',
-      ctrlKey: true,
-      description: 'Toggle tree view',
-      action: () => setVisualizationMode('tree'),
-    },
-    {
-      key: 'b',
-      ctrlKey: true,
-      description: 'Toggle table view',
-      action: () => setVisualizationMode('table'),
-    },
-    {
-      key: 'c',
-      ctrlKey: true,
-      description: 'Toggle comparison mode',
-      action: () => setMainMode('comparison'),
-    },
-    {
-      key: 'm',
-      ctrlKey: true,
-      description: 'Toggle batch mode',
-      action: () => setMainMode('batch'),
-    },
-    {
-      key: 'f',
-      ctrlKey: true,
-      description: 'Focus search',
-      action: () => {
-        const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
-        searchInput?.focus();
-      },
-    },
-    {
-      key: '?',
-      shiftKey: true,
-      description: 'Show keyboard shortcuts',
-      action: () => setShowShortcuts(true),
-    },
-    {
-      key: 'r',
-      ctrlKey: true,
-      description: 'Reset analysis',
-      action: () => {
-        reset();
-        setComparisonResults([null, null]);
-        setSearchQuery('');
-        setLevelFilter([]);
-        setSeverityFilter([]);
-      },
-    },
-  ];
-
-  useKeyboardShortcuts(shortcuts, !showShortcuts);
 
   const handleComparisonAnalyze = (index: 0 | 1, html: string) => {
     // Create a temporary analysis
@@ -170,7 +110,7 @@ function App() {
   return (
     <div className="min-h-screen bg-background transition-colors">
       {/* Header */}
-      <Header onShowShortcuts={() => setShowShortcuts(true)} />
+      <Header />
 
       {/* Main Content Container */}
       <div className="container mx-auto px-4 py-6">
@@ -487,23 +427,12 @@ function App() {
                     <span>🔍</span>
                     Detects SEO issues and provides actionable recommendations
                   </p>
-                  <p className="flex items-center justify-center gap-2">
-                    <span>⌨️</span>
-                    Press Shift + ? to see keyboard shortcuts
-                  </p>
                 </div>
               </CardContent>
             </Card>
           </div>
         )}
       </div>
-
-      {/* Keyboard Shortcuts Modal */}
-      <KeyboardShortcutsHelp
-        shortcuts={shortcuts}
-        isOpen={showShortcuts}
-        onClose={() => setShowShortcuts(false)}
-      />
 
       {/* Toast Notifications */}
       <Toaster />
