@@ -161,27 +161,21 @@ export function extractHeadings(
  * Note: Some proxies may have rate limits or may be down periodically
  */
 const CORS_PROXIES = [
-  // AllOrigins - Most reliable, wraps response in JSON
-  {
-    url: 'https://api.allorigins.win/get?url=',
-    type: 'json' as const,
-    extract: (data: any) => data.contents
-  },
-  // Corsproxy.io - Direct proxy
+  // Corsproxy.io - Direct proxy, usually reliable
   {
     url: 'https://corsproxy.io/?',
     type: 'direct' as const,
     extract: (data: any) => data
   },
-  // ThingProxy - Another reliable option
+  // AllOrigins - Wraps response in JSON, very reliable
   {
-    url: 'https://thingproxy.freeboard.io/fetch/',
-    type: 'direct' as const,
-    extract: (data: any) => data
+    url: 'https://api.allorigins.win/get?url=',
+    type: 'json' as const,
+    extract: (data: any) => data.contents
   },
-  // API CORS Proxy
+  // CORS Anywhere (Heroku) - Backup option
   {
-    url: 'https://api.codetabs.com/v1/proxy?quest=',
+    url: 'https://cors-anywhere.herokuapp.com/',
     type: 'direct' as const,
     extract: (data: any) => data
   },
@@ -213,10 +207,6 @@ export async function extractHeadingsFromUrl(url: string): Promise<Heading[]> {
       const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
 
       const response = await fetch(proxyUrl, {
-        headers: {
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
         signal: controller.signal,
         mode: 'cors',
       });
