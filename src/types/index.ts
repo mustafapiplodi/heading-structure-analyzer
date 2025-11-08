@@ -16,6 +16,20 @@ export interface Heading {
   html: string;
   position: number;
   depth?: number;
+  // Accessibility attributes
+  ariaLabel?: string;
+  ariaLabelledby?: string;
+  ariaHidden?: boolean;
+  ariaLevel?: number;
+  role?: string;
+  // Visibility information
+  isHidden?: boolean;
+  hiddenMethod?: 'display-none' | 'visibility-hidden' | 'aria-hidden' | 'opacity-0' | 'off-screen';
+  // Semantic context
+  parentElement?: string;
+  parentSemanticTag?: string;
+  isInLandmark?: boolean;
+  landmarkType?: string;
 }
 
 export interface HeadingNode {

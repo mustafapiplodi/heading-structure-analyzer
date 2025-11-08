@@ -1,5 +1,7 @@
 import type { Heading, ValidationResult, Issue } from '../types';
 import { performAdvancedValidation } from './advancedValidation';
+import { validateAccessibility } from './accessibilityValidation';
+import { validateSemanticHTML } from './semanticValidation';
 
 /**
  * Validate heading structure and detect common issues
@@ -200,6 +202,30 @@ export function validateHeadingStructure(
   // Perform advanced SEO and readability validation
   const advancedIssues = performAdvancedValidation(headings);
   advancedIssues.forEach(issue => {
+    if (issue.severity === 'critical') {
+      errors.push(issue);
+    } else if (issue.severity === 'warning') {
+      warnings.push(issue);
+    } else {
+      info.push(issue);
+    }
+  });
+
+  // Perform accessibility validation (ARIA, hidden headings)
+  const accessibilityIssues = validateAccessibility(headings);
+  accessibilityIssues.forEach(issue => {
+    if (issue.severity === 'critical') {
+      errors.push(issue);
+    } else if (issue.severity === 'warning') {
+      warnings.push(issue);
+    } else {
+      info.push(issue);
+    }
+  });
+
+  // Perform semantic HTML5 validation (nesting, landmarks)
+  const semanticIssues = validateSemanticHTML(headings);
+  semanticIssues.forEach(issue => {
     if (issue.severity === 'critical') {
       errors.push(issue);
     } else if (issue.severity === 'warning') {
