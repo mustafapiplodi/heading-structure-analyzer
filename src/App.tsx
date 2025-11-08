@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Toaster } from '@/components/ui/sonner';
 import { Keyboard, List, Table as TableIcon, GitCompare, AlertCircle, FileText, ListTodo } from 'lucide-react';
 import { exportBatchToCSV, exportBatchToJSON } from './lib/batchExport';
 import type { AnalysisResult } from './types';
@@ -393,6 +394,9 @@ function App() {
         isOpen={showShortcuts}
         onClose={() => setShowShortcuts(false)}
       />
+
+      {/* Toast Notifications */}
+      <Toaster />
     </div>
   );
 }
