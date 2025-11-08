@@ -58,3 +58,40 @@ export interface AnalysisState {
   result: AnalysisResult | null;
   error: string | null;
 }
+
+// Batch Analysis Types
+export type BatchJobStatus = 'pending' | 'analyzing' | 'completed' | 'failed';
+
+export interface BatchJob {
+  id: string;
+  url: string;
+  status: BatchJobStatus;
+  result?: AnalysisResult;
+  error?: string;
+  startedAt?: number;
+  completedAt?: number;
+}
+
+export interface BatchAnalysisState {
+  jobs: BatchJob[];
+  isRunning: boolean;
+  isPaused: boolean;
+  totalJobs: number;
+  completedJobs: number;
+  failedJobs: number;
+  startedAt?: number;
+  completedAt?: number;
+}
+
+export interface BatchStats {
+  totalPages: number;
+  completedPages: number;
+  failedPages: number;
+  totalHeadings: number;
+  totalErrors: number;
+  totalWarnings: number;
+  avgHeadingsPerPage: number;
+  pagesWithIssues: number;
+  pagesWithoutH1: number;
+  pagesWithMultipleH1: number;
+}

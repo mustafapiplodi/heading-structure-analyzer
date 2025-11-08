@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useHeadingAnalysis } from './hooks/useHeadingAnalysis';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useBatchAnalysis } from './hooks/useBatchAnalysis';
 import UrlInput from './components/UrlInput';
 import MetricsSummary from './components/MetricsSummary';
 import HeadingTree from './components/HeadingTree';
@@ -9,16 +10,20 @@ import IssueCard from './components/IssueCard';
 import ExportButtons from './components/ExportButtons';
 import SearchFilter from './components/SearchFilter';
 import ComparisonMode from './components/ComparisonMode';
+import BatchInput from './components/BatchInput';
+import BatchProgress from './components/BatchProgress';
+import BatchResults from './components/BatchResults';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import ThemeToggle from './components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Keyboard, List, Table as TableIcon, GitCompare, AlertCircle, FileText } from 'lucide-react';
+import { Keyboard, List, Table as TableIcon, GitCompare, AlertCircle, FileText, ListTodo } from 'lucide-react';
+import { exportBatchToCSV, exportBatchToJSON } from './lib/batchExport';
 import type { AnalysisResult } from './types';
 
-type ViewMode = 'tree' | 'table' | 'comparison';
+type ViewMode = 'tree' | 'table' | 'comparison' | 'batch';
 
 function App() {
   const {
@@ -30,6 +35,17 @@ function App() {
     analyzeFromFile,
     reset,
   } = useHeadingAnalysis();
+
+  // Batch analysis hook
+  const {
+    state: batchState,
+    startBatch,
+    pause: pauseBatch,
+    resume: resumeBatch,
+    cancel: cancelBatch,
+    reset: resetBatch,
+    getStats,
+  } = useBatchAnalysis();
 
   // View and filter states
   const [viewMode, setViewMode] = useState<ViewMode>('tree');
@@ -62,6 +78,12 @@ function App() {
       ctrlKey: true,
       description: 'Toggle comparison mode',
       action: () => setViewMode('comparison'),
+    },
+    {
+      key: 'm',
+      ctrlKey: true,
+      description: 'Toggle batch mode',
+      action: () => setViewMode('batch'),
     },
     {
       key: 'f',
@@ -175,7 +197,7 @@ function App() {
         )}
 
         {/* View Mode Toggle */}
-        {(result || viewMode === 'comparison') && (
+        {(result || viewMode === 'comparison' || viewMode === 'batch') && (
           <div className="max-w-6xl mx-auto mt-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
               {/* View Tabs */}
@@ -193,11 +215,15 @@ function App() {
                     <GitCompare className="mr-2 h-4 w-4" />
                     Compare
                   </TabsTrigger>
+                  <TabsTrigger value="batch" title="Batch mode (Ctrl+M)">
+                    <ListTodo className="mr-2 h-4 w-4" />
+                    Batch
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
 
               {/* Reset Button */}
-              {result && viewMode !== 'comparison' && (
+              {result && viewMode !== 'comparison' && viewMode !== 'batch' && (
                 <Button
                   onClick={reset}
                   variant="outline"
@@ -217,8 +243,44 @@ function App() {
           </div>
         )}
 
+        {/* Batch Analysis Mode */}
+        {viewMode === 'batch' && (
+          <div className="space-y-6">
+            {batchState.totalJobs === 0 ? (
+              <BatchInput
+                onStartBatch={startBatch}
+                isProcessing={batchState.isRunning}
+              />
+            ) : (
+              <>
+                <BatchProgress
+                  state={batchState}
+                  onPause={pauseBatch}
+                  onResume={resumeBatch}
+                  onCancel={cancelBatch}
+                />
+                {(batchState.completedJobs > 0 || batchState.failedJobs > 0) && (
+                  <BatchResults
+                    jobs={batchState.jobs}
+                    stats={getStats()}
+                    onExportCSV={() => exportBatchToCSV(batchState.jobs, getStats())}
+                    onExportJSON={() => exportBatchToJSON(batchState.jobs, getStats())}
+                  />
+                )}
+                {!batchState.isRunning && !batchState.isPaused && (
+                  <div className="flex justify-center">
+                    <Button onClick={resetBatch} variant="outline">
+                      Start New Batch Analysis
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
         {/* Results Section */}
-        {result && viewMode !== 'comparison' && (
+        {result && viewMode !== 'comparison' && viewMode !== 'batch' && (
           <div className="max-w-6xl mx-auto">
             {/* Metrics Summary */}
             <MetricsSummary result={result} />
@@ -299,7 +361,7 @@ function App() {
         )}
 
         {/* Empty State */}
-        {!result && !error && !isAnalyzing && viewMode !== 'comparison' && (
+        {!result && !error && !isAnalyzing && viewMode !== 'comparison' && viewMode !== 'batch' && (
           <div className="max-w-4xl mx-auto mt-12">
             <Card>
               <CardContent className="pt-12 pb-12 text-center">
