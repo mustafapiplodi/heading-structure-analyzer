@@ -18,8 +18,8 @@ export function validateHeadingStructure(
     errors.push({
       type: 'no_headings',
       severity: 'critical',
-      message: 'No headings detected on page',
-      recommendation: 'Add semantic heading tags (H1-H6) to structure your content',
+      message: 'No headings detected on this page',
+      recommendation: 'Add semantic heading tags (H1-H6) to improve content structure, SEO, and accessibility. Start with an H1 that describes your main topic.',
     });
     return { errors, warnings };
   }
@@ -32,8 +32,8 @@ export function validateHeadingStructure(
     errors.push({
       type: 'missing_h1_start',
       severity: 'critical',
-      message: `Page should start with H1, but starts with H${headings[0].level}`,
-      recommendation: 'Add an H1 heading at the beginning of your content',
+      message: `Page starts with H${headings[0].level} instead of H1 - this hurts SEO and accessibility`,
+      recommendation: 'Begin your page with a unique H1 heading that clearly describes the main topic. This is crucial for search engines and screen readers.',
     });
   }
 
@@ -48,19 +48,26 @@ export function validateHeadingStructure(
         warnings.push({
           type: 'multiple_h1',
           severity: 'warning',
-          message: `Multiple H1 tags found (${h1Count} total)`,
+          message: `Found ${h1Count} H1 tags on this page - modern SEO recommends using only one`,
           recommendation:
-            'Consider using only one H1 per page for clarity and SEO best practices',
+            'Use a single H1 that captures your main topic, then use H2-H6 for subsections. Multiple H1s can dilute your page\'s topical focus.',
         });
       }
 
       // Check H1 length
-      if (currentText.length < 20 || currentText.length > 70) {
+      if (currentText.length < 20) {
         warnings.push({
           type: 'h1_length',
           severity: 'warning',
-          message: `H1 length (${currentText.length} chars) outside optimal range (20-70)`,
-          recommendation: 'Optimal H1 length is 20-70 characters for SEO',
+          message: `Your H1 is too short (${currentText.length} characters) - aim for 20-70 characters`,
+          recommendation: 'A good H1 should be descriptive enough to tell users and search engines what the page is about. Add more context to reach 20-70 characters.',
+        });
+      } else if (currentText.length > 70) {
+        warnings.push({
+          type: 'h1_length',
+          severity: 'warning',
+          message: `Your H1 is too long (${currentText.length} characters) - aim for 20-70 characters`,
+          recommendation: 'Long H1s may get truncated in search results. Keep it concise and impactful at 20-70 characters.',
         });
       }
     }
@@ -70,8 +77,8 @@ export function validateHeadingStructure(
       errors.push({
         type: 'empty_heading',
         severity: 'critical',
-        message: `Empty ${heading.tag.toUpperCase()} tag at position ${index + 1}`,
-        recommendation: 'Remove empty heading or add descriptive content',
+        message: `Empty ${heading.tag.toUpperCase()} tag found at position ${index + 1} - this is an accessibility violation`,
+        recommendation: 'Empty headings confuse screen readers and provide no value to users. Either remove this tag or add descriptive content that explains what follows.',
       });
       return; // Skip further validation for empty headings
     }
@@ -86,18 +93,18 @@ export function validateHeadingStructure(
       errors.push({
         type: 'heading_skipped',
         severity: 'critical',
-        message: `Heading level skipped from H${previousLevel} to H${currentLevel}`,
-        recommendation: `Add ${skippedLevels.join(', ')} before ${heading.tag.toUpperCase()} for proper hierarchy`,
+        message: `Heading hierarchy jump: H${previousLevel} → H${currentLevel} skips ${skippedLevels.join(', ')}`,
+        recommendation: `Screen readers and search engines expect a logical heading flow. Insert ${skippedLevels.join(' and ')} level${skippedLevels.length > 1 ? 's' : ''} to maintain proper document outline.`,
       });
     }
 
     // Check heading length
-    if (currentText.length > 70) {
+    if (currentText.length > 70 && currentLevel !== 1) {
       warnings.push({
         type: 'heading_too_long',
         severity: 'warning',
-        message: `${heading.tag.toUpperCase()} is too long (${currentText.length} characters)`,
-        recommendation: 'Consider shortening to under 70 characters',
+        message: `${heading.tag.toUpperCase()} is lengthy at ${currentText.length} characters - readers may lose focus`,
+        recommendation: 'Headings work best when concise. Try to communicate the main idea in under 70 characters for better scannability.',
       });
     }
 
@@ -105,8 +112,8 @@ export function validateHeadingStructure(
       warnings.push({
         type: 'heading_too_short',
         severity: 'warning',
-        message: `${heading.tag.toUpperCase()} is very short (${currentText.length} characters)`,
-        recommendation: 'Use more descriptive heading text',
+        message: `${heading.tag.toUpperCase()} "${currentText}" is too vague (${currentText.length} characters)`,
+        recommendation: 'Very short headings rarely provide enough context. Aim for at least 3-5 words that clearly describe the section content.',
       });
     }
 
@@ -127,8 +134,8 @@ export function validateHeadingStructure(
       warnings.push({
         type: 'generic_heading',
         severity: 'warning',
-        message: `Generic heading text: "${currentText}"`,
-        recommendation: 'Use more specific, descriptive headings',
+        message: `Generic heading "${currentText}" doesn't help users or SEO`,
+        recommendation: 'Replace vague headings with specific, keyword-rich alternatives. For example, instead of "About Us", try "About [Company Name]: Our Mission and Values".',
       });
     }
 
@@ -149,8 +156,8 @@ export function validateHeadingStructure(
       warnings.push({
         type: 'keyword_stuffing',
         severity: 'warning',
-        message: `Possible keyword stuffing detected: "${repeatedWords.map(([word]) => word).join(', ')}"`,
-        recommendation: 'Avoid repeating keywords too many times in a single heading',
+        message: `Repeated words detected: "${repeatedWords.map(([word]) => word).join(', ')}" - this may look like spam to search engines`,
+        recommendation: 'Modern search engines penalize keyword stuffing. Write naturally for humans, using synonyms and varied language instead of repetition.',
       });
     }
 
@@ -159,9 +166,9 @@ export function validateHeadingStructure(
       warnings.push({
         type: 'all_caps',
         severity: 'info',
-        message: 'Heading uses all capital letters',
+        message: `Heading "${currentText}" uses all capitals - this impacts readability`,
         recommendation:
-          'Use proper title case for better readability and accessibility',
+          'Screen readers may read ALL CAPS letter by letter. Use Title Case or sentence case for better readability and accessibility compliance.',
       });
     }
 
@@ -173,8 +180,8 @@ export function validateHeadingStructure(
     errors.push({
       type: 'missing_h1',
       severity: 'critical',
-      message: 'Page has no H1 heading',
-      recommendation: 'Add a descriptive H1 heading to identify the main topic',
+      message: 'No H1 heading found - this is critical for SEO and accessibility',
+      recommendation: 'Every page needs exactly one H1 that clearly states the main topic. This helps search engines understand your content and assists screen reader users in navigation.',
     });
   }
 
@@ -184,9 +191,9 @@ export function validateHeadingStructure(
     warnings.push({
       type: 'excessive_depth',
       severity: 'warning',
-      message: `Excessive use of deep heading levels (${h5h6Count} H5/H6 tags)`,
+      message: `Found ${h5h6Count} deep headings (H5/H6) - your content structure may be too complex`,
       recommendation:
-        'Consider simplifying your content structure - most content works well with H1-H4',
+        'Most readers struggle with deeply nested content. Try restructuring to use only H1-H4, breaking complex sections into separate pages, or using lists instead of nested headings.',
     });
   }
 

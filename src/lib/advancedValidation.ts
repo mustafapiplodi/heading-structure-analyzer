@@ -194,8 +194,8 @@ export function performAdvancedValidation(headings: Heading[]): Issue[] {
     issues.push({
       type: 'similar_headings',
       severity: 'warning',
-      message: `Headings "${heading1.text}" and "${heading2.text}" are ${Math.round(similarity * 100)}% similar`,
-      recommendation: 'Use unique, descriptive headings to avoid confusing users and search engines'
+      message: `These headings are ${Math.round(similarity * 100)}% similar: "${heading1.text}" and "${heading2.text}"`,
+      recommendation: 'Duplicate or similar headings make it harder for users to navigate and may confuse search engines about your content structure. Make each heading distinct and descriptive.'
     });
   });
 
@@ -209,8 +209,8 @@ export function performAdvancedValidation(headings: Heading[]): Issue[] {
       issues.push({
         type: 'low_readability',
         severity: 'info',
-        message: `${heading.tag.toUpperCase()} has low readability score (${readability.toFixed(0)}): "${text}"`,
-        recommendation: 'Simplify the heading text for better user understanding'
+        message: `${heading.tag.toUpperCase()} is difficult to read (score: ${readability.toFixed(0)}/100): "${text}"`,
+        recommendation: 'Complex headings reduce comprehension. Use shorter words and simpler sentence structure. Aim for conversational language that a general audience can quickly understand.'
       });
     }
 
@@ -219,8 +219,8 @@ export function performAdvancedValidation(headings: Heading[]): Issue[] {
       issues.push({
         type: 'question_format',
         severity: 'info',
-        message: `Question-format heading detected: "${text}"`,
-        recommendation: 'This is good for featured snippets! Consider providing a direct answer in the content below.'
+        message: `Great! Question-format heading found: "${text}"`,
+        recommendation: 'Question headings are excellent for SEO and featured snippets. To maximize impact, provide a clear, concise answer in the first paragraph below this heading.'
       });
     }
 
@@ -230,8 +230,8 @@ export function performAdvancedValidation(headings: Heading[]): Issue[] {
       issues.push({
         type: 'no_power_words_h1',
         severity: 'info',
-        message: `H1 lacks power words for engagement: "${text}"`,
-        recommendation: `Consider adding power words like: ${POWER_WORDS.slice(0, 5).join(', ')}`
+        message: `Your H1 could be more engaging: "${text}"`,
+        recommendation: `Power words increase click-through rates and engagement. Try incorporating words like: ${POWER_WORDS.slice(0, 8).join(', ')}. Example: "Complete Guide" instead of "Guide"`
       });
     }
 
@@ -240,8 +240,8 @@ export function performAdvancedValidation(headings: Heading[]): Issue[] {
       issues.push({
         type: 'numbered_heading',
         severity: 'info',
-        message: `Numbered heading detected: "${text}"`,
-        recommendation: 'Great! Numbered headings (lists) tend to perform well in search results.'
+        message: `Excellent use of numbers in heading: "${text}"`,
+        recommendation: 'List-format headings with numbers perform exceptionally well in search results and get higher click-through rates. Consider using this format for more headings where appropriate.'
       });
     }
 
@@ -251,8 +251,8 @@ export function performAdvancedValidation(headings: Heading[]): Issue[] {
       issues.push({
         type: 'too_many_stop_words',
         severity: 'warning',
-        message: `${heading.tag.toUpperCase()} contains ${stopWordsPercent.toFixed(0)}% stop words: "${text}"`,
-        recommendation: 'Reduce common words and use more descriptive, keyword-rich terms'
+        message: `${heading.tag.toUpperCase()} contains too many filler words (${stopWordsPercent.toFixed(0)}%): "${text}"`,
+        recommendation: 'High stop-word density dilutes SEO value. Replace common words (the, a, and, of, etc.) with meaningful keywords that describe your content more precisely.'
       });
     }
 
@@ -262,8 +262,8 @@ export function performAdvancedValidation(headings: Heading[]): Issue[] {
       issues.push({
         type: 'negative_sentiment_h1',
         severity: 'warning',
-        message: `H1 has negative sentiment: "${text}"`,
-        recommendation: 'Consider using more positive or neutral language for main headings'
+        message: `Your H1 has negative tone: "${text}"`,
+        recommendation: 'Negative language in main headings can reduce engagement and click-through rates. Consider reframing with neutral or positive language while maintaining accuracy. Example: "Avoid Common Mistakes" instead of "Terrible Failures to Avoid"'
       });
     }
   });

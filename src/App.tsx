@@ -344,14 +344,29 @@ function App() {
         {/* Empty State */}
         {!result && !error && !isAnalyzing && viewMode !== 'comparison' && viewMode !== 'batch' && (
           <div className="max-w-4xl mx-auto mt-12">
-            <Card>
+            <Card className="animate-fade-in">
               <CardContent className="pt-12 pb-12 text-center">
                 <FileText className="mx-auto h-16 w-16 mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-medium mb-2">
-                  Ready to analyze
+                  Ready to analyze your heading structure
                 </h3>
-                <p className="text-sm text-muted-foreground">Enter HTML, a URL, or upload a file to get started</p>
-                <p className="text-xs text-muted-foreground mt-2">Press Shift + ? to see keyboard shortcuts</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Paste HTML, enter a URL, or upload a file to get instant SEO and accessibility insights
+                </p>
+                <div className="flex flex-col gap-2 text-xs text-muted-foreground max-w-md mx-auto">
+                  <p className="flex items-center justify-center gap-2">
+                    <span>💡</span>
+                    Analyzes heading hierarchy (H1-H6) for WCAG compliance
+                  </p>
+                  <p className="flex items-center justify-center gap-2">
+                    <span>🔍</span>
+                    Detects SEO issues and provides actionable recommendations
+                  </p>
+                  <p className="flex items-center justify-center gap-2">
+                    <span>⌨️</span>
+                    Press Shift + ? to see keyboard shortcuts
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
