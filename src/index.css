@@ -14,3 +14,13 @@ body {
 code {
   font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
 }
+
+/* Dark mode support */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: rgb(17 24 39);
+  color: rgb(243 244 246);
+}

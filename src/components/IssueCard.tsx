@@ -1,11 +1,14 @@
 import type { Issue } from '../types';
 import { getSeverityColor, getSeverityIcon } from '../lib/validateStructure';
+import QuickFix from './QuickFix';
 
 interface IssueCardProps {
   issue: Issue;
+  html?: string;
+  text?: string;
 }
 
-export default function IssueCard({ issue }: IssueCardProps) {
+export default function IssueCard({ issue, html, text }: IssueCardProps) {
   return (
     <div
       className={`border-l-4 p-4 rounded-r-lg ${getSeverityColor(issue.severity)}`}
@@ -29,6 +32,7 @@ export default function IssueCard({ issue }: IssueCardProps) {
               <strong>Fix:</strong> {issue.recommendation}
             </p>
           )}
+          <QuickFix issue={issue} html={html} text={text} />
         </div>
       </div>
     </div>
