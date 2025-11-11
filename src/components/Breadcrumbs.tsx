@@ -17,19 +17,6 @@ export default function Breadcrumbs() {
         <li>
           <ChevronRight className="h-4 w-4" />
         </li>
-        <li>
-          <a
-            href="https://www.scalinghigh.com/tools"
-            className="hover:text-foreground transition-colors"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Tools
-          </a>
-        </li>
-        <li>
-          <ChevronRight className="h-4 w-4" />
-        </li>
         <li className="font-medium text-foreground" aria-current="page">
           Heading Structure Analyzer
         </li>

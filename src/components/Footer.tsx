@@ -63,18 +63,31 @@ export default function Footer() {
             © {currentYear} Heading Structure Analyzer. All rights reserved.
           </p>
 
-          <p className="flex items-center gap-1">
-            Powered by{' '}
-            <a
-              href="https://www.scalinghigh.com"
-              className="font-semibold text-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Scaling High Technologies
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </p>
+          <div className="flex flex-col items-center gap-2">
+            <p className="flex items-center gap-1">
+              Powered by{' '}
+              <a
+                href="https://www.scalinghigh.com"
+                className="font-semibold text-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Scaling High Technologies
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </p>
+            <p className="text-xs">
+              Need SEO, Web Development, or Graphic Design?{' '}
+              <a
+                href="https://www.scalinghigh.com/contact"
+                className="font-semibold text-foreground hover:text-primary transition-colors underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Get in touch
+              </a>
+            </p>
+          </div>
 
           <p className="flex items-center gap-1">
             Made with <Heart className="h-4 w-4 text-red-500 fill-current" /> for better web
